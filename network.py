@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import random
 from itertools import combinations, chain
 from collections import defaultdict
+import numpy as np
 
 def create_satellite_bipartite_graph(locations, timesteps, satellites, min_cost=1, max_cost=10):
     """Previous function with increased coverage probability"""
@@ -93,33 +94,6 @@ def find_all_valid_coverages(G, tuple_nodes, satellite_nodes, edge_costs):
     
     return sorted(valid_solutions, key=lambda x: x[1])  # Sort by total cost
 
-# Example usage
-locations = 2
-timesteps = 2
-satellites = 3
-min_cost = 1
-max_cost = 10
-
-# Create graph
-G, tuple_nodes, satellite_nodes, edge_costs = create_satellite_bipartite_graph(
-    locations, timesteps, satellites, min_cost, max_cost
-)
-
-# Find all valid coverages
-valid_coverages = find_all_valid_coverages(G, tuple_nodes, satellite_nodes, edge_costs)
-
-# Print results
-print("\nAll valid satellite combinations (sorted by total cost):")
-for idx, (satellite_set, total_cost, coverage_details) in enumerate(valid_coverages, 1):
-    print(f"\nSolution {idx}:")
-    print(f"Satellites used: {satellite_set}")
-    print(f"Total cost: {total_cost}")
-    print("Coverage details:")
-    for loc_time, satellites in coverage_details.items():
-        print(f"  {loc_time} covered by:")
-        for sat, cost in satellites:
-            print(f"    - {sat} at cost {cost}")
-
 def visualize_coverage(G, tuple_nodes, satellite_nodes, edge_costs):
     """
     Visualizes the complete coverage graph showing all possible coverages.
@@ -157,8 +131,34 @@ def visualize_coverage(G, tuple_nodes, satellite_nodes, edge_costs):
     plt.axis('off')
     return plt
 
+# Example usage
+locations = 2
+timesteps = 2
+satellites = 3
+min_cost = 1
+max_cost = 10
+
+# Create graph
+G, tuple_nodes, satellite_nodes, edge_costs = create_satellite_bipartite_graph(
+    locations, timesteps, satellites, min_cost, max_cost
+)
+
+# Find all valid coverages
+valid_coverages = find_all_valid_coverages(G, tuple_nodes, satellite_nodes, edge_costs)
+
+# Print results
+print("\nAll valid satellite combinations (sorted by total cost):")
+for idx, (satellite_set, total_cost, coverage_details) in enumerate(valid_coverages, 1):
+    print(f"\nSolution {idx}:")
+    print(f"Satellites used: {satellite_set}")
+    print(f"Total cost: {total_cost}")
+    print("Coverage details:")
+    for loc_time, satellites in coverage_details.items():
+        print(f"  {loc_time} covered by:")
+        for sat, cost in satellites:
+            print(f"    - {sat} at cost {cost}")
+
 # Visualize the complete coverage
-import numpy as np
 plt = visualize_coverage(G, tuple_nodes, satellite_nodes, edge_costs)
 plt.savefig('complete_coverage_graph.png')
 plt.show()
