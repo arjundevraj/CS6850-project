@@ -11,7 +11,6 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     """Previous function with increased coverage probability"""
     assert coverage_prob >= 0 and coverage_prob <= 1, "Coverage probability must be between 0 and 1"
     G = nx.Graph()
-    edge_costs = {}
     
     # Create (location, timestep) tuple nodes
     tuple_nodes = []
@@ -100,6 +99,45 @@ def find_all_valid_coverages(G, tuple_nodes, satellites):
     
     return sorted(valid_solutions, key=lambda x: x[1])  # Sort by total cost
 
+def greedy_degree_based_algorithm(G, tuple_nodes, satellites):
+    """
+    Find the optimal combination of satellites that provides full coverage.
+    Each location-time tuple can be covered by multiple satellites.
+    
+    Returns:
+        tuple: (satellite_set, total_cost, coverage_details)
+    """
+    # Create a mapping of each location-time tuple to all satellites that can cover it
+    coverage_map = {}
+    for sat in satellites:
+        coverage_map[sat] = set(G.neighbors(sat))
+    
+    coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: len(item[1]), reverse=True)}
+    
+    # Initialize the set of all location-time tuples
+    U = set(tuple_nodes)
+    
+    # Initialize an empty set to store the selected satellites
+    satellite_set = set()
+    
+    # Initialize an empty dictionary to store the coverage details
+    coverage_details = defaultdict(set)
+
+    for sat, tuples in coverage_map_sorted.items():
+        if len(U) == 0:
+            break
+        covered = U.intersection(tuples)
+        if len(covered) > 0:
+            satellite_set.add(sat)
+            U -= covered
+            for tuple_node in covered:
+                coverage_details[tuple_node].add(sat)
+    
+    # Calculate the total cost
+    total_cost = sum(satellites[satellite] for satellite in satellite_set)
+    
+    return satellite_set, total_cost, coverage_details
+
 def visualize_coverage(G, tuple_nodes, satellite_nodes):
     """
     Visualizes the complete coverage graph showing all possible coverages.
@@ -178,20 +216,40 @@ if print_all:
             print(f"  {loc_time} covered by:")
             for sat, cost in satellites:
                 print(f"    - {sat} at cost {cost}")
-else:
-    print("\nMin cost satellite combination:")
-    satellite_set, total_cost, coverage_details = valid_coverages[0]
-    print(f"Satellites used: {satellite_set}")
-    print(f"Total cost: {total_cost}")
-    print("Coverage details:")
-    for loc_time, satellites in coverage_details.items():
-        print(f"  {loc_time} covered by:")
-        for sat in satellites:
-            print(f"    - {sat} at cost {satellite_nodes[sat]}")
 
+print("\nBrute force algorithm results:")
+print("Min cost satellite combination:")
+satellite_set, total_cost, coverage_details = valid_coverages[0]
+print(f"Satellites used: {satellite_set}")
+print(f"Total cost: {total_cost}")
+print("Coverage details:")
+for loc_time, satellites in coverage_details.items():
+    print(f"  {loc_time} covered by:")
+    for sat in satellites:
+        print(f"    - {sat} at cost {satellite_nodes[sat]}")
+
+naive_time = (end_time - start_time) * 1000
 print(f"\nSatellite costs: {satellite_nodes}")
 print(f"Total number of valid solutions: {len(valid_coverages)}")
-print(f"Time taken: {end_time - start_time} seconds")
+print(f"Time taken: {naive_time} ms")
+
+# Run greedy algorithm
+start_time = time.time()
+greedy_satellite_set, greedy_total_cost, greedy_coverage_details = greedy_degree_based_algorithm(G, tuple_nodes, satellite_nodes)
+end_time = time.time()
+
+print("\nGreedy algorithm results:")
+print(f"Satellites used: {greedy_satellite_set}")
+print(f"Total cost: {greedy_total_cost}")
+print("Coverage details:")
+for loc_time, satellites in greedy_coverage_details.items():
+    print(f"  {loc_time} covered by:")
+    for sat in satellites:
+        print(f"    - {sat} at cost {satellite_nodes[sat]}")
+greedy_time = (end_time - start_time) * 1000
+print(f"Time taken: {greedy_time} ms")   
+print(f"Time improvement: {naive_time - greedy_time} ms")
+print(f"Cost optimality gap: {greedy_total_cost - total_cost}")
 
 if visualize:
     # Visualize the complete coverage
