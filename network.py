@@ -4,9 +4,11 @@ import random
 from itertools import combinations, chain
 from collections import defaultdict
 import numpy as np
+import argparse
 
-def create_satellite_bipartite_graph(locations, timesteps, satellites, min_cost=1, max_cost=10):
+def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_prob, min_cost=1, max_cost=10):
     """Previous function with increased coverage probability"""
+    assert coverage_prob >= 0 and coverage_prob <= 1, "Coverage probability must be between 0 and 1"
     G = nx.Graph()
     edge_costs = {}
     
@@ -25,7 +27,7 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, min_cost=
     # Add random edges with costs - increased probability for multiple coverage
     for s in satellite_nodes:
         # Each satellite covers more location-time pairs
-        num_coverages = random.randint(len(tuple_nodes) // 2, len(tuple_nodes))
+        num_coverages = int(coverage_prob * len(tuple_nodes))
         covered_tuples = random.sample(tuple_nodes, num_coverages)
         for tuple_node in covered_tuples:
             cost = random.randint(min_cost, max_cost)
@@ -34,7 +36,7 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, min_cost=
     
     return G, tuple_nodes, satellite_nodes, edge_costs
 
-def get_coverage_map(G, tuple_nodes, satellite_nodes, edge_costs):
+def get_coverage_map(G, tuple_nodes, edge_costs):
     """
     Creates a mapping of each location-time tuple to all satellites that can cover it.
     
@@ -56,7 +58,7 @@ def find_all_valid_coverages(G, tuple_nodes, satellite_nodes, edge_costs):
     Returns:
         list: List of (satellite_set, total_cost, coverage_details) tuples
     """
-    coverage_map = get_coverage_map(G, tuple_nodes, satellite_nodes, edge_costs)
+    coverage_map = get_coverage_map(G, tuple_nodes, edge_costs)
     valid_solutions = []
     
     # Check if each location-time tuple has at least one satellite covering it
@@ -131,16 +133,29 @@ def visualize_coverage(G, tuple_nodes, satellite_nodes, edge_costs):
     plt.axis('off')
     return plt
 
-# Example usage
-locations = 2
-timesteps = 2
-satellites = 3
-min_cost = 1
-max_cost = 10
+parser = argparse.ArgumentParser(
+    prog='Satellite Cost Optimization',
+    description='Find the optimal combination of satellite plans given coverage requirements'
+)
+
+parser.add_argument('--locations', type=int, help='Number of locations')
+parser.add_argument('--timesteps', type=int, help='Number of timesteps')
+parser.add_argument('--satellites', type=int, help='Number of satellites')
+parser.add_argument('--coverage_prob', type=float, help='Coverage probability for each satellite')
+parser.add_argument('--min_cost', type=int, help='Minimum cost for a satellite')
+parser.add_argument('--max_cost', type=int, help='Maximum cost for a satellite')
+
+args = parser.parse_args()
+locations = args.locations
+timesteps = args.timesteps
+satellites = args.satellites
+coverage_prob = args.coverage_prob
+min_cost = args.min_cost
+max_cost = args.max_cost
 
 # Create graph
 G, tuple_nodes, satellite_nodes, edge_costs = create_satellite_bipartite_graph(
-    locations, timesteps, satellites, min_cost, max_cost
+    locations, timesteps, satellites, coverage_prob, min_cost, max_cost
 )
 
 # Find all valid coverages
