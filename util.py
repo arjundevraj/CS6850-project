@@ -4,6 +4,7 @@ import random
 from itertools import combinations
 from collections import defaultdict
 import numpy as np
+import math
 
 def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_prob, min_cost=1, max_cost=10):
     """Previous function with increased coverage probability"""
@@ -27,7 +28,7 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     
     for s in satellite_nodes:
         # Each satellite covers more location-time pairs
-        num_coverages = round(coverage_prob * len(tuple_nodes))
+        num_coverages = math.ceil(coverage_prob * len(tuple_nodes))
         covered_tuples = random.sample(tuple_nodes, num_coverages)
         for tuple_node in covered_tuples:
             G.add_edge(tuple_node, s)
@@ -48,7 +49,7 @@ def get_coverage_map(G, tuple_nodes, satellites):
             coverage_map[tuple_node].append((satellite, cost))
     return coverage_map
 
-def brute_force_algorithm(G, tuple_nodes, satellites):
+def brute_force_algorithm(G, feasible_tuple_nodes, satellites):
     best_solution = None 
     best_cost = float('inf')
     for r in range(1, len(satellites) + 1):
@@ -58,14 +59,14 @@ def brute_force_algorithm(G, tuple_nodes, satellites):
             for satellite in satellite_set:
                 covered_tuples.update(G.neighbors(satellite))
         
-            if len(covered_tuples) == len(tuple_nodes):
+            if len(covered_tuples) == len(feasible_tuple_nodes):
                 total_cost = sum(satellites[satellite] for satellite in satellite_set)
                 if total_cost < best_cost:
                     best_solution = satellite_set
                     best_cost = total_cost
     return best_solution, best_cost
 
-def greedy_degree_based_algorithm(G, tuple_nodes, satellites):
+def greedy_degree_based_algorithm(G, feasible_tuple_nodes, satellites):
     """
     Find the optimal combination of satellites that provides full coverage.
     Each location-time tuple can be covered by multiple satellites.
@@ -81,7 +82,7 @@ def greedy_degree_based_algorithm(G, tuple_nodes, satellites):
     coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: len(item[1]), reverse=True)}
     
     # Initialize the set of all location-time tuples
-    U = set(tuple_nodes)
+    U = set(feasible_tuple_nodes)
     
     # Initialize an empty set to store the selected satellites
     satellite_set = set()
@@ -99,7 +100,7 @@ def greedy_degree_based_algorithm(G, tuple_nodes, satellites):
     
     return satellite_set, total_cost
 
-def greedy_cost_based_algorithm(G, tuple_nodes, satellites):
+def greedy_cost_based_algorithm(G, feasible_tuple_nodes, satellites):
     """
     Find the optimal combination of satellites that provides full coverage.
     Each location-time tuple can be covered by multiple satellites.
@@ -116,7 +117,7 @@ def greedy_cost_based_algorithm(G, tuple_nodes, satellites):
     coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: satellites[item[0]])}
     
     # Initialize the set of all location-time tuples
-    U = set(tuple_nodes)
+    U = set(feasible_tuple_nodes)
     
     # Initialize an empty set to store the selected satellites
     satellite_set = set()
