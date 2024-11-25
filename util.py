@@ -5,6 +5,7 @@ from itertools import combinations
 from collections import defaultdict
 import numpy as np
 import math
+from scipy.stats import bernoulli
 
 def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_prob, min_cost=1, max_cost=10):
     """Previous function with increased coverage probability"""
@@ -28,10 +29,10 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     
     for s in satellite_nodes:
         # Each satellite covers more location-time pairs
-        num_coverages = math.ceil(coverage_prob * len(tuple_nodes))
-        covered_tuples = random.sample(tuple_nodes, num_coverages)
-        for tuple_node in covered_tuples:
-            G.add_edge(tuple_node, s)
+        covered_tuples = bernoulli.rvs(coverage_prob, size=len(tuple_nodes))
+        for tuple_node, covered in zip(tuple_nodes, covered_tuples):
+            if covered == 1:
+                G.add_edge(tuple_node, s)
     
     return G, tuple_nodes, satellite_nodes
 

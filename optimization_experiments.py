@@ -43,7 +43,7 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         print(f"Satellite nodes: {satellite_nodes}")
         print(f"Greedy degree satellite set: {greedy_degree_satellite_set}")
         print(f"Brute force satellite set: {brute_force_satellite_set}")
-    deg_times.append((end - start) * 1000)
+    deg_times.append(end - start)
     deg_optimality_gaps.append(greedy_degree_cost - brute_force_cost)
 
     start = time.time()
@@ -56,7 +56,7 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         print(f"Satellite nodes: {satellite_nodes}")
         print(f"Greedy cost satellite set: {greedy_cost_satellite_set}")
         print(f"Brute force satellite set: {brute_force_satellite_set}")
-    cost_times.append((end - start) * 1000)
+    cost_times.append(end - start)
     cost_optimality_gaps.append(greedy_cost_cost - brute_force_cost)
 
 plt.style.use('classic')
@@ -65,7 +65,7 @@ plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force", color
 plt.plot(x_vals, deg_times, marker='o', lw=3, label="Greedy-Degree", color='blue')
 plt.plot(x_vals, cost_times, marker='x', lw=3, label="Greedy-Cost", color='red')
 plt.xlabel("Number of Satellites", fontsize=18)
-plt.ylabel("Time (ms)", fontsize=18)
+plt.ylabel("Time (s)", fontsize=18)
 plt.legend(loc=(0, 1), frameon=False, ncol=3, fontsize=14)   
 plt.savefig('time_comparison.png', bbox_inches='tight')
 
