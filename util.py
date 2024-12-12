@@ -12,6 +12,9 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     assert coverage_prob >= 0 and coverage_prob <= 1, "Coverage probability must be between 0 and 1"
     G = nx.Graph()
     
+
+    # switch order to calculate the coverage based on a different distribution followed by the coverage probability
+    # then calculate the cost for each node given the degree
     # Create (location, timestep) tuple nodes
     tuple_nodes = []
     for l in range(locations):
@@ -29,7 +32,7 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     
     for s in satellite_nodes:
         # Each satellite covers more location-time pairs
-        covered_tuples = bernoulli.rvs(coverage_prob, size=len(tuple_nodes))
+        covered_tuples = bernoulli.rvs(coverage_prob, size=len(tuple_nodes)) # switch to a different prob to try
         for tuple_node, covered in zip(tuple_nodes, covered_tuples):
             if covered == 1:
                 G.add_edge(tuple_node, s)
