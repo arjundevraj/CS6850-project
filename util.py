@@ -6,8 +6,9 @@ from collections import defaultdict
 import numpy as np
 import math
 from scipy.stats import bernoulli
+from scipy.stats import powerlaw
 
-def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_prob, min_cost=1, max_cost=10):
+def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_prob, min_cost=1, max_cost=10, prob_type = 'bernoulli'):
     """Previous function with increased coverage probability"""
     assert coverage_prob >= 0 and coverage_prob <= 1, "Coverage probability must be between 0 and 1"
     G = nx.Graph()
@@ -32,7 +33,15 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
     
     for s in satellite_nodes:
         # Each satellite covers more location-time pairs
-        covered_tuples = bernoulli.rvs(coverage_prob, size=len(tuple_nodes)) # switch to a different prob to try
+        
+        if prob_type == 'power_law':
+            covered_tuples = np.random.power(coverage_prob, size=len(tuple_nodes)) # very few satellite plans with very good coverage, and majority with bad coverage
+        elif prob_type == 'lognormal':
+            covered_tuples = np.random.lognormal(coverage_prob, size=len(tuple_nodes)) # More moderate inequality, still skewed but not as bad
+        else:
+            covered_tuples = bernoulli.rvs(coverage_prob, size=len(tuple_nodes)) # default
+        
+
         for tuple_node, covered in zip(tuple_nodes, covered_tuples):
             if covered == 1:
                 G.add_edge(tuple_node, s)
