@@ -1,6 +1,10 @@
-from util import *
+from util_v2 import *
+import matplotlib
+matplotlib.use('Agg')  # for Linux (not needed for Mac I believe)
 import matplotlib.pyplot as plt
 import time
+
+
 
 def get_covered_tuple_nodes(G, tuple_nodes):
     covered_tuple_nodes = []
