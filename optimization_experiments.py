@@ -1,10 +1,10 @@
 from util_v2 import *
+from solver import *
 import matplotlib
 matplotlib.use('Agg')  # for Linux (not needed for Mac I believe)
 import matplotlib.pyplot as plt
 import time
-
-
+import math
 
 def get_covered_tuple_nodes(G, tuple_nodes):
     covered_tuple_nodes = []
@@ -23,8 +23,12 @@ x_vals = []
 brute_force_times = []
 deg_times = []
 cost_times = []
+ilp_times = []
+lp_times = []
 deg_optimality_gaps = []
 cost_optimality_gaps = []
+ilp_gaps = []
+lp_gaps = []
 
 for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, num_locations_list, num_satellites_list):
     print(f"num_timesteps: {num_timesteps}, num_locations: {num_locations}, num_satellites: {num_satellites}")
@@ -63,11 +67,27 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
     cost_times.append(end - start)
     cost_optimality_gaps.append(greedy_cost_cost - brute_force_cost)
 
+    start = time.time()
+    ilp_satellite_set, ilp_cost = weighted_set_cover_ilp(G, feasible_tuple_nodes, satellite_nodes)
+    end = time.time()
+    ilp_times.append(end - start)
+    ilp_gaps.append(ilp_cost - brute_force_cost)
+
+    k = 2 * math.ceil(np.log(num_satellites))
+    start = time.time()
+    lp_satellite_set, lp_cost = weighted_set_cover_lp_relaxation(G, feasible_tuple_nodes, satellite_nodes, k)
+    end = time.time()   
+    lp_times.append(end - start)
+    lp_gaps.append(lp_cost - brute_force_cost)
+
+
 plt.style.use('classic')
 plt.rcParams.update({'font.size': 14})
-plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force", color='green')
-plt.plot(x_vals, deg_times, marker='o', lw=3, label="Greedy-Degree", color='blue')
-plt.plot(x_vals, cost_times, marker='x', lw=3, label="Greedy-Cost", color='red')
+plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force")
+plt.plot(x_vals, deg_times, marker='o', lw=3, label="Greedy-Degree")
+plt.plot(x_vals, cost_times, marker='x', lw=3, label="Greedy-Cost")
+plt.plot(x_vals, ilp_times, marker='d', lw=3, label="ILP")
+plt.plot(x_vals, lp_times, marker='p', lw=3, label="LP-approx")
 plt.xlabel("Number of Satellites", fontsize=18)
 plt.ylabel("Time (s)", fontsize=18)
 plt.legend(loc=(0, 1), frameon=False, ncol=3, fontsize=14)   
@@ -75,8 +95,10 @@ plt.savefig('time_comparison.png', bbox_inches='tight')
 
 plt.clf()
 plt.rcParams.update({'font.size': 14})
-plt.plot(x_vals, deg_optimality_gaps, marker='^', lw=3, label="Greedy-Degree", color='blue')
-plt.plot(x_vals, cost_optimality_gaps, marker='v', lw=3, label="Greedy-Cost", color='red')
+plt.plot(x_vals, deg_optimality_gaps, marker='^', lw=3, label="Greedy-Degree")
+plt.plot(x_vals, cost_optimality_gaps, marker='v', lw=3, label="Greedy-Cost")
+plt.plot(x_vals, ilp_gaps, marker='d', lw=3, label="ILP")
+plt.plot(x_vals, lp_gaps, marker='p', lw=3, label="LP-approx")
 plt.xlabel("Number of Satellites", fontsize=18)
 plt.ylabel("Optimality Gap (Cost)", fontsize=18)
 plt.legend(loc=(0.15, 1), frameon=False, ncols=2, fontsize=14)
