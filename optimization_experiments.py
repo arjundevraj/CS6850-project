@@ -14,7 +14,7 @@ def get_covered_tuple_nodes(G, tuple_nodes):
     
     return covered_tuple_nodes
 
-num_satellites_list = [1, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100]
+num_satellites_list = [1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150]
 num_timesteps_list = list(num_satellites_list)
 num_locations_list = [5 for _ in range(len(num_satellites_list))]
 COVERAGE_PROB = 0.5
@@ -23,10 +23,14 @@ x_vals = []
 brute_force_times = []
 deg_times = []
 cost_times = []
+ratio_times = []
+online_ratio_times = []
 ilp_times = []
 lp_times = []
-deg_optimality_gaps = []
-cost_optimality_gaps = []
+deg_gaps = []
+cost_gaps = []
+ratio_gaps = []
+online_ratio_gaps = []
 ilp_gaps = []
 lp_gaps = []
 
@@ -60,7 +64,7 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         print(f"Greedy degree satellite set: {greedy_degree_satellite_set}")
         print(f"Brute force satellite set: {brute_force_satellite_set}")
     deg_times.append(end - start)
-    deg_optimality_gaps.append(greedy_degree_cost - brute_force_cost)
+    deg_gaps.append(greedy_degree_cost - brute_force_cost)
 
     start = time.time()
     greedy_cost_satellite_set, greedy_cost_cost = greedy_cost_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
@@ -73,7 +77,35 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         print(f"Greedy cost satellite set: {greedy_cost_satellite_set}")
         print(f"Brute force satellite set: {brute_force_satellite_set}")
     cost_times.append(end - start)
-    cost_optimality_gaps.append(greedy_cost_cost - brute_force_cost)
+    cost_gaps.append(greedy_cost_cost - brute_force_cost)
+
+    start = time.time()
+    greedy_ratio_satellite_set, greedy_ratio_cost = greedy_ratio_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
+    end = time.time()
+    if greedy_ratio_cost < brute_force_cost:
+        print("SOMETHING WENT WRONG!")
+        print(f"Brute force cost: {brute_force_cost}")
+        print(f"Greedy cost cost: {greedy_cost_cost}")
+        print(f"Satellite nodes: {satellite_nodes}")
+        print(f"Greedy cost satellite set: {greedy_cost_satellite_set}")
+        print(f"Brute force satellite set: {brute_force_satellite_set}")
+    ratio_times.append(end - start)
+    ratio_gaps.append(greedy_ratio_cost - brute_force_cost)
+
+    '''
+    start = time.time()
+    online_greedy_ratio_satellite_set, online_greedy_ratio_cost = online_greedy_ratio_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
+    end = time.time()
+    if online_greedy_ratio_cost < brute_force_cost:
+        print("SOMETHING WENT WRONG!")
+        print(f"Brute force cost: {brute_force_cost}")
+        print(f"Greedy cost cost: {greedy_cost_cost}")
+        print(f"Satellite nodes: {satellite_nodes}")
+        print(f"Greedy cost satellite set: {greedy_cost_satellite_set}")
+        print(f"Brute force satellite set: {brute_force_satellite_set}")
+    online_ratio_times.append(end - start)
+    online_ratio_gaps.append(online_greedy_ratio_cost - brute_force_cost)
+    '''
 
     k = 2 * math.ceil(np.log(num_satellites))
     start = time.time()
@@ -85,10 +117,12 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
 plt.style.use('classic')
 plt.rcParams.update({'font.size': 14})
 # plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force")
-plt.plot(x_vals, deg_times, marker='o', lw=3, label="Greedy-Degree")
-plt.plot(x_vals, cost_times, marker='x', lw=3, label="Greedy-Cost")
 plt.plot(x_vals, ilp_times, marker='d', lw=3, label="ILP")
-plt.plot(x_vals, lp_times, marker='p', lw=3, label="LP-approx")
+plt.plot(x_vals, lp_times, marker='p', lw=3, label="LP-Approx")
+plt.plot(x_vals, deg_times, marker='o', lw=3, label="Degree-Greedy")
+plt.plot(x_vals, cost_times, marker='x', lw=3, label="Cost-Greedy")
+plt.plot(x_vals, ratio_times, marker='*', lw=3, label="Ratio-Greedy")
+# plt.plot(x_vals, online_ratio_times, marker='^', lw=3, label="Online Ratio-Greedy")
 plt.xlabel("Number of Satellites", fontsize=18)
 plt.ylabel("Time (s)", fontsize=18)
 plt.legend(loc=(0, 1), frameon=False, ncol=3, fontsize=14)   
@@ -96,10 +130,11 @@ plt.savefig('time_comparison.png', bbox_inches='tight')
 
 plt.clf()
 plt.rcParams.update({'font.size': 14})
-plt.plot(x_vals, deg_optimality_gaps, marker='^', lw=3, label="Greedy-Degree")
-plt.plot(x_vals, cost_optimality_gaps, marker='v', lw=3, label="Greedy-Cost")
-# plt.plot(x_vals, ilp_gaps, marker='d', lw=3, label="ILP")
 plt.plot(x_vals, lp_gaps, marker='p', lw=3, label="LP-approx")
+plt.plot(x_vals, deg_gaps, marker='^', lw=3, label="Degree-Greedy")
+plt.plot(x_vals, cost_gaps, marker='v', lw=3, label="Cost-Greedy")
+plt.plot(x_vals, ratio_gaps, marker='d', lw=3, label="Ratio-Greedy")
+# plt.plot(x_vals, online_ratio_gaps, marker='o', lw=3, label="Online Ratio-Greedy")
 plt.xlabel("Number of Satellites", fontsize=18)
 plt.ylabel("Optimality Gap (Cost)", fontsize=18)
 plt.legend(loc=(0.15, 1), frameon=False, ncols=2, fontsize=14)

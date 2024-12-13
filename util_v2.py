@@ -87,8 +87,6 @@ def create_satellite_bipartite_graph(locations, timesteps, satellites, coverage_
         satellite_nodes[s]['cost'] = cost
         simpler_satellite_nodes[s] = cost
         G.nodes[s]['cost'] = cost
-
-
     
     return G, tuple_nodes, simpler_satellite_nodes#satellite_nodes
 
@@ -134,7 +132,10 @@ def greedy_degree_based_algorithm(G, feasible_tuple_nodes, satellites):
     # Create a mapping of each location-time tuple to all satellites that can cover it
     coverage_map = {}
     for sat in satellites:
-        coverage_map[sat] = set(G.neighbors(sat))
+        covered_nodes = set(G.neighbors(sat))
+        if len(covered_nodes) == 0:
+            continue
+        coverage_map[sat] = covered_nodes
     
     coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: len(item[1]), reverse=True)}
     
@@ -168,7 +169,10 @@ def greedy_cost_based_algorithm(G, feasible_tuple_nodes, satellites):
     # Create a mapping of each location-time tuple to all satellites that can cover it
     coverage_map = {}
     for sat in satellites:
-        coverage_map[sat] = set(G.neighbors(sat))
+        covered_nodes = set(G.neighbors(sat))
+        if len(covered_nodes) == 0:
+            continue
+        coverage_map[sat] = covered_nodes
     
     # sort coverage_map by the value of the satellite in satellites dict
     coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: satellites[item[0]])}
@@ -192,6 +196,83 @@ def greedy_cost_based_algorithm(G, feasible_tuple_nodes, satellites):
     
     return satellite_set, total_cost
 
+def greedy_ratio_based_algorithm(G, feasible_tuple_nodes, satellites):
+    # Create a mapping of each location-time tuple to all satellites that can cover it
+    coverage_map = {}
+    for sat in satellites:
+        covered_nodes = set(G.neighbors(sat))
+        if len(covered_nodes) == 0:
+            continue
+        coverage_map[sat] = covered_nodes
+    
+    # sort coverage_map by the value of the satellite in satellites dict
+    coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: satellites[item[0]] / len(item[1]))}
+    
+    # Initialize the set of all location-time tuples
+    U = set(feasible_tuple_nodes)
+    
+    # Initialize an empty set to store the selected satellites
+    satellite_set = set()
+
+    for sat, tuples in coverage_map_sorted.items():
+        if len(U) == 0:
+            break
+        covered = U.intersection(tuples)
+        if len(covered) > 0:
+            satellite_set.add(sat)
+            U -= covered
+    
+    # Calculate the total cost
+    total_cost = sum(satellites[satellite] for satellite in satellite_set)
+    
+    return satellite_set, total_cost
+
+def online_greedy_ratio_based_algorithm(G, feasible_tuple_nodes, satellites):
+    # Create a mapping of each location-time tuple to all satellites that can cover it
+    coverage_map = {}
+    for sat in satellites:
+        covered_nodes = set(G.neighbors(sat))
+        if len(covered_nodes) == 0:
+            continue
+        coverage_map[sat] = covered_nodes
+    
+    # sort coverage_map by the value of the satellite in satellites dict
+    coverage_map_sorted = {k: v for k, v in sorted(coverage_map.items(), key=lambda item: len(item[1]), reverse=True)}
+    
+    # Initialize the set of all location-time tuples
+    U = set(feasible_tuple_nodes)
+    
+    # Initialize an empty set to store the selected satellites
+    satellite_set = set()
+    all_covered = set()
+
+    iter = 0
+    for sat, tuples in coverage_map_sorted.items():
+        print(iter, len(coverage_map_sorted))
+        if len(U) == 0:
+            break
+        covered = U.intersection(tuples)
+        if len(covered) > 0:
+            satellite_set.add(sat)
+            U -= covered
+            all_covered.update(covered)
+        
+        new_coverage_map = {}
+        for sat2, coverage in coverage_map_sorted.items():
+            new_coverage = coverage.difference(all_covered)
+            assert len(new_coverage) <= len(coverage)
+            if len(new_coverage) == 0:
+                continue 
+            new_coverage_map[sat2] = new_coverage
+        
+        coverage_map_sorted = {k: v for k, v in sorted(new_coverage_map.items(), key=lambda item: len(item[1]), reverse=True)}
+        iter += 1
+    
+    # Calculate the total cost
+    total_cost = sum(satellites[satellite] for satellite in satellite_set)
+    
+    return satellite_set, total_cost
+    
 def find_all_valid_coverages(G, tuple_nodes, satellites):
     """
     Find all valid combinations of satellites that provide full coverage.
