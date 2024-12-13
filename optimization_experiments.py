@@ -14,7 +14,7 @@ def get_covered_tuple_nodes(G, tuple_nodes):
     
     return covered_tuple_nodes
 
-num_satellites_list = [1, 2, 5, 10, 15, 20, 25]
+num_satellites_list = [1, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100]
 num_timesteps_list = list(num_satellites_list)
 num_locations_list = [5 for _ in range(len(num_satellites_list))]
 COVERAGE_PROB = 0.5
@@ -38,9 +38,17 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         G, tuple_nodes, satellite_nodes = create_satellite_bipartite_graph(num_locations, num_timesteps, num_satellites, COVERAGE_PROB)
         feasible_tuple_nodes = get_covered_tuple_nodes(G, tuple_nodes)
     start = time.time()
+    ilp_satellite_set, ilp_cost = weighted_set_cover_ilp(G, feasible_tuple_nodes, satellite_nodes)
+    end = time.time()
+    ilp_times.append(end - start)
+    brute_force_cost = ilp_cost
+    brute_force_satellite_set = ilp_satellite_set
+    '''
+    start = time.time()
     brute_force_satellite_set, brute_force_cost = brute_force_algorithm(G, feasible_tuple_nodes, satellite_nodes)
     end = time.time()
     brute_force_times.append(end - start)
+    '''
     start = time.time()
     greedy_degree_satellite_set, greedy_degree_cost = greedy_degree_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
     end = time.time()
@@ -67,12 +75,6 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
     cost_times.append(end - start)
     cost_optimality_gaps.append(greedy_cost_cost - brute_force_cost)
 
-    start = time.time()
-    ilp_satellite_set, ilp_cost = weighted_set_cover_ilp(G, feasible_tuple_nodes, satellite_nodes)
-    end = time.time()
-    ilp_times.append(end - start)
-    ilp_gaps.append(ilp_cost - brute_force_cost)
-
     k = 2 * math.ceil(np.log(num_satellites))
     start = time.time()
     lp_satellite_set, lp_cost = weighted_set_cover_lp_relaxation(G, feasible_tuple_nodes, satellite_nodes, k)
@@ -80,10 +82,9 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
     lp_times.append(end - start)
     lp_gaps.append(lp_cost - brute_force_cost)
 
-
 plt.style.use('classic')
 plt.rcParams.update({'font.size': 14})
-plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force")
+# plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force")
 plt.plot(x_vals, deg_times, marker='o', lw=3, label="Greedy-Degree")
 plt.plot(x_vals, cost_times, marker='x', lw=3, label="Greedy-Cost")
 plt.plot(x_vals, ilp_times, marker='d', lw=3, label="ILP")
@@ -97,7 +98,7 @@ plt.clf()
 plt.rcParams.update({'font.size': 14})
 plt.plot(x_vals, deg_optimality_gaps, marker='^', lw=3, label="Greedy-Degree")
 plt.plot(x_vals, cost_optimality_gaps, marker='v', lw=3, label="Greedy-Cost")
-plt.plot(x_vals, ilp_gaps, marker='d', lw=3, label="ILP")
+# plt.plot(x_vals, ilp_gaps, marker='d', lw=3, label="ILP")
 plt.plot(x_vals, lp_gaps, marker='p', lw=3, label="LP-approx")
 plt.xlabel("Number of Satellites", fontsize=18)
 plt.ylabel("Optimality Gap (Cost)", fontsize=18)
