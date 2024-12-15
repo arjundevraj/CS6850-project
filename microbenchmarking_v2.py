@@ -14,10 +14,10 @@ def get_covered_tuple_nodes(G, tuple_nodes):
     
     return covered_tuple_nodes
 
-num_satellites_list = [2, 5, 10, 20, 25, 30, 40, 50, 75, 100, 150]
-num_timesteps_list = list(num_satellites_list)
-num_locations_list = [5 for _ in range(len(num_satellites_list))]
-COVERAGE_PROB = 0.5
+NUM_SATELLITES = 50
+NUM_TIMESTEPS = 50
+NUM_LOCATIONS = 5
+coverage_probs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 x_vals = []
 brute_force_times = []
@@ -39,12 +39,11 @@ ratio_coverages = []
 lp_coverages = []
 ilp_coverages = []
 
-for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, num_locations_list, num_satellites_list):
-    print(f"num_timesteps: {num_timesteps}, num_locations: {num_locations}, num_satellites: {num_satellites}")
-    x_vals.append(num_satellites)
+for coverage_prob in coverage_probs:
+    x_vals.append(coverage_prob)
     feasible_tuple_nodes = []
-    while len(feasible_tuple_nodes) < COVERAGE_PROB * num_timesteps * num_locations:
-        G, tuple_nodes, satellite_nodes = create_satellite_bipartite_graph(num_locations, num_timesteps, num_satellites, COVERAGE_PROB)
+    while len(feasible_tuple_nodes) < coverage_prob * NUM_TIMESTEPS * NUM_LOCATIONS:
+        G, tuple_nodes, satellite_nodes = create_satellite_bipartite_graph(NUM_LOCATIONS, NUM_TIMESTEPS, NUM_SATELLITES, coverage_prob)
         feasible_tuple_nodes = get_covered_tuple_nodes(G, tuple_nodes)
     
     all_coverable_tuple_nodes = set([tuple_node for tuple_node in tuple_nodes if G.degree(tuple_node) > 0])
@@ -58,12 +57,7 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
     for satellite in ilp_satellite_set:
         ilp_covered.update(set(G.neighbors(satellite)))
     ilp_coverages.append(100 * len(ilp_covered) / len(all_coverable_tuple_nodes))
-    '''
-    start = time.time()
-    brute_force_satellite_set, brute_force_cost = brute_force_algorithm(G, feasible_tuple_nodes, satellite_nodes)
-    end = time.time()
-    brute_force_times.append(end - start)
-    '''
+   
     start = time.time()
     greedy_degree_satellite_set, greedy_degree_cost = greedy_degree_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
     end = time.time()
@@ -115,22 +109,7 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
         ratio_covered.update(set(G.neighbors(satellite)))
     ratio_coverages.append(100 * len(ratio_covered) / len(all_coverable_tuple_nodes))
 
-    '''
-    start = time.time()
-    online_greedy_ratio_satellite_set, online_greedy_ratio_cost = online_greedy_ratio_based_algorithm(G, feasible_tuple_nodes, satellite_nodes)
-    end = time.time()
-    if online_greedy_ratio_cost < brute_force_cost:
-        print("SOMETHING WENT WRONG!")
-        print(f"Brute force cost: {brute_force_cost}")
-        print(f"Greedy cost cost: {greedy_cost_cost}")
-        print(f"Satellite nodes: {satellite_nodes}")
-        print(f"Greedy cost satellite set: {greedy_cost_satellite_set}")
-        print(f"Brute force satellite set: {brute_force_satellite_set}")
-    online_ratio_times.append(end - start)
-    online_ratio_gaps.append(online_greedy_ratio_cost - brute_force_cost)
-    '''
-
-    k = 2 * math.ceil(np.log(num_timesteps * num_locations))
+    k = 2 * math.ceil(np.log(NUM_TIMESTEPS * NUM_LOCATIONS))
     start = time.time()
     lp_satellite_set, lp_cost = weighted_set_cover_lp_relaxation(G, feasible_tuple_nodes, satellite_nodes, k)
     end = time.time()   
@@ -143,38 +122,11 @@ for (num_timesteps, num_locations, num_satellites) in zip(num_timesteps_list, nu
 
 plt.style.use('classic')
 plt.rcParams.update({'font.size': 14})
-# plt.plot(x_vals, brute_force_times, marker='s', lw=3, label="Brute-Force")
-plt.plot(x_vals, deg_times, marker='o', lw=3, label="Degree-Greedy")
-plt.plot(x_vals, cost_times, marker='x', lw=3, label="Cost-Greedy")
-plt.plot(x_vals, ratio_times, marker='s', lw=3, label="Ratio-Greedy")
-plt.plot(x_vals, lp_times, marker='p', lw=3, label="LP-Approx")
-# plt.plot(x_vals, ilp_times, marker='d', lw=3, label="ILP")
-# plt.plot(x_vals, online_ratio_times, marker='^', lw=3, label="Online Ratio-Greedy")
-plt.xlabel("Number of Satellites", fontsize=18)
-plt.ylabel("Time (s)", fontsize=18)
-plt.legend(loc=(0.15, 1), frameon=False, ncol=2, fontsize=14)   
-plt.savefig('time_comparison_v2.png', bbox_inches='tight')
-
-plt.clf()
-plt.rcParams.update({'font.size': 14})
 plt.plot(x_vals, deg_gaps, marker='o', lw=3, label="Degree-Greedy")
 plt.plot(x_vals, cost_gaps, marker='x', lw=3, label="Cost-Greedy")
 plt.plot(x_vals, ratio_gaps, marker='s', lw=3, label="Ratio-Greedy")
 plt.plot(x_vals, lp_gaps, marker='p', lw=3, label="LP-Approx")
-# plt.plot(x_vals, online_ratio_gaps, marker='o', lw=3, label="Online Ratio-Greedy")
-plt.xlabel("Number of Satellites", fontsize=18)
+plt.xlabel("Coverage probability", fontsize=18)
 plt.ylabel("Optimality Gap (Cost)", fontsize=18)
 plt.legend(loc=(0.15, 1), frameon=False, ncols=2, fontsize=14)
-plt.savefig('optimality_gap.png', bbox_inches='tight')
-
-plt.clf()
-plt.rcParams.update({'font.size': 14})
-plt.plot(x_vals, deg_coverages, marker='o', lw=3, label="Degree-Greedy")    
-plt.plot(x_vals, cost_coverages, marker='x', lw=3, label="Cost-Greedy")
-plt.plot(x_vals, ratio_coverages, marker='s', lw=3, label="Ratio-Greedy")
-plt.plot(x_vals, lp_coverages, marker='p', lw=3, label="LP-Approx")
-plt.plot(x_vals, ilp_coverages, marker='d', lw=3, label="ILP")
-plt.xlabel("Number of Satellites", fontsize=18)
-plt.ylabel("Coverage (%)", fontsize=18)
-plt.legend(loc=(0, 1), frameon=False, ncol=3, fontsize=14)
-plt.savefig('coverage.png', bbox_inches='tight')
+plt.savefig('optimality_gap_prob.png', bbox_inches='tight')
