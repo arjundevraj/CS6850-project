@@ -325,15 +325,24 @@ def visualize_coverage(G, tuple_nodes, satellite_nodes):
     """
     Visualizes the complete coverage graph showing all possible coverages.
     """
-    plt.figure(figsize=(12, 8))
+    # plt.figure(figsize=(12, 8))
+    plt.figure()
+    
+    # create a list of  l1, l2, l3, etc. for each location-time pair
+    tuple_labels = [f"{node[0]}" for node in tuple_nodes]
+  
     pos = nx.bipartite_layout(G, tuple_nodes)
     
+    
     # Draw nodes
+    # label for these should simply be l1, l2, l3, etc.
     nx.draw_networkx_nodes(G, pos, nodelist=tuple_nodes, 
-                          node_color='lightblue', node_size=500,
+                          node_color='lightblue', node_size=200,
                           label='Location-Time Pairs')
+ 
+    
     nx.draw_networkx_nodes(G, pos, nodelist=satellite_nodes,
-                          node_color='lightgreen', node_size=500,
+                          node_color='lightgreen', node_size=250,
                           label='Satellites')
     
     # Draw edges with different colors for different satellites
@@ -348,7 +357,10 @@ def visualize_coverage(G, tuple_nodes, satellite_nodes):
              **{node: node for node in satellite_nodes}}
     nx.draw_networkx_labels(G, pos, labels)
     
-    plt.title("Complete Coverage Graph (All Possible Coverages)")
-    plt.legend()
+    plt.title("Satellite Plan Coverage Graph")
+    # top right
+    plt.legend(loc='upper right')
     plt.axis('off')
+    #tight
+    plt.tight_layout()
     return plt
